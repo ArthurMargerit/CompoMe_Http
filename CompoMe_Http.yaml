@@ -1,0 +1,36 @@
+- IMPORT: CompoMe.yaml
+- IMPORT: CompoMe_Tools.yaml
+- IMPORT: CompoMe_Swig.yaml
+- IMPORT: CompoMe_Log.yaml
+
+- LINK:
+    NAME: CompoMe::Posix::Http_client_out
+    DATA:
+      - CompoMe::String addr
+      - i32 port
+      - CompoMe::String to WITH "/"
+    PORT:
+      - OUT
+    SWIG: true
+
+- LINK:
+    NAME: CompoMe::Posix::Http_server_in
+    DATA:
+      - CompoMe::String addr WITH "127.0.0.1"
+      - i32 port WITH 1500
+      - ui32 max_client WITH 1024
+      - ui32 max_request_size WITH 1024
+    PORT:
+      - IN
+    SWIG: true
+
+- LINK:
+    NAME: CompoMe::Posix::Http_server_map_in
+    DATA:
+      - CompoMe::String addr WITH "127.0.0.1"
+      - i32 port WITH 1500
+      - ui32 max_client WITH 1024
+      - ui32 max_request_size WITH 1024
+    PORT:
+      - MAP_IN
+    SWIG: true
