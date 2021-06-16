@@ -1,3 +1,4 @@
 .*\.DBUS.*
 .*\.BASE.*
-GEN:LINK\.CompoMe::Posix::Http
+GEN:LINK\.CompoMe::Posix::Http_server_in$
+GEN:LINK\.CompoMe::Posix::Http_client_out$

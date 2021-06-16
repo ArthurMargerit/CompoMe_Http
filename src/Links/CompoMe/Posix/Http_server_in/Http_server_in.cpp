@@ -1,14 +1,14 @@
 #include "Links/CompoMe/Posix/Http_server_in/Http_server_in.hpp"
 #include "CompoMe/Log.hpp"
 #include "CompoMe/Tools/Http/Call.hpp"
-#include "Links/atomizes.hpp"
 #include "Interfaces/Interface.hpp"
+#include "Links/atomizes.hpp"
 #include <arpa/inet.h>
 #include <errno.h>
 #include <netinet/in.h>
-#include <sys/poll.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/poll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <time.h>
@@ -19,24 +19,16 @@ namespace CompoMe {
 namespace Posix {
 
 Http_server_in::Http_server_in()
-    : CompoMe::Link(), listening_socket(-1), fds(nullptr), i_fds(0),
-      buff(nullptr) {
-  this->listening_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-  if (listening_socket == -1) {
-    C_ERROR("socket() failed");
-    return;
-  }
-
-  int enable = 1;
-  setsockopt(this->listening_socket, SOL_SOCKET, SO_REUSEADDR, &enable,
-             sizeof(int));
+    : CompoMe::Link(), main(), many(), listening_socket(-1), fds(nullptr),
+      i_fds(0), buff(nullptr) {
+  this->main.set_link(*this);
+  this->many.set_link(*this);
 }
 
-Http_server_in::~Http_server_in() { this->disconnect(); }
+Http_server_in::~Http_server_in() { this->main_disconnect(); }
 
 void Http_server_in::step() {
   Link::step();
-
   int ret = poll(fds, this->i_fds, 0);
 
   if (ret == 0) {
@@ -68,11 +60,10 @@ void Http_server_in::step() {
   }
 
   if (this->fds[0].revents & POLLHUP) {
-    this->disconnect();
+    this->main_disconnect();
   }
 
   for (int i = 1; i < this->i_fds; i++) {
-
 
     if (this->fds[i].revents & POLLERR) {
       C_ERROR("Error in Poll()");
@@ -96,33 +87,39 @@ void Http_server_in::step() {
     }
 
     if (this->fds[i].revents & POLLIN) {
-      ssize_t readden = recv(this->fds[i].fd,
-                             this->buff,
-                             this->get_max_request_size(), 0);
-      if(readden == 0 || readden == 1 ) {
+      ssize_t readden =
+          recv(this->fds[i].fd, this->buff, this->get_max_request_size(), 0);
+      if (readden == 0 || readden == 1) {
         continue;
       }
       buff[readden] = '\0';
 
-      auto result = CompoMe::Tools::Http::call(&this->get_caller_stream(),
-                                               buff);
+      auto result = CompoMe::Tools::Http::call(
+          this->get_main().get_interface(),
+          this->get_many().get_interfaces_list(), buff);
 
-      int r = send(fds[i].fd, result.second.c_str(),
-               result.second.length(), MSG_NOSIGNAL);
+      int r = send(fds[i].fd, result.second.c_str(), result.second.length(),
+                   MSG_NOSIGNAL);
       if (r == -1) {
         C_ERROR_TAG("http,server,recv", "respond sending failled",
                     strerror(errno));
       }
-      
+    } else {
     }
-
-
   }
 }
 
-void Http_server_in::connect() {
-  Link::connect();
+void Http_server_in::main_connect() {
+  Link::main_connect();
+  this->listening_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  if (listening_socket == -1) {
+    C_ERROR("socket() failed");
+    return;
+  }
 
+  int enable = 1;
+  setsockopt(this->listening_socket, SOL_SOCKET, SO_REUSEADDR, &enable,
+             sizeof(int));
   struct sockaddr_in addr = {0};
   addr.sin_family = AF_INET;
   addr.sin_port = htons(this->get_port());
@@ -153,7 +150,7 @@ void Http_server_in::connect() {
     if (this->fds == nullptr) {
       C_ERROR("Malloc failed for fds size asked is ",
               (this->get_max_client() + 1) * sizeof(*this->fds));
-      this->disconnect();
+      this->main_disconnect();
       return;
     }
   }
@@ -161,7 +158,7 @@ void Http_server_in::connect() {
   {
     this->buff = (char *)malloc(sizeof(char) * this->get_max_request_size());
     if (this->buff == nullptr) {
-      this->disconnect();
+      this->main_disconnect();
       C_ERROR("malloc failled for buff");
     }
   }
@@ -174,8 +171,8 @@ void Http_server_in::connect() {
   }
 }
 
-void Http_server_in::disconnect() {
-  Link::disconnect();
+void Http_server_in::main_disconnect() {
+  Link::main_disconnect();
   if (this->listening_socket != -1) {
     close(this->listening_socket);
     this->listening_socket = -1;
@@ -193,28 +190,19 @@ void Http_server_in::disconnect() {
   this->buff = nullptr;
 }
 
-// Get and set /////////////////////////////////////////////////////////////
+// one connect
+void Http_server_in::one_connect(CompoMe::Require_helper &p_r,
+                                 CompoMe::String p_key) {}
 
-CompoMe::String Http_server_in::get_addr() const { return this->addr; }
+void Http_server_in::one_connect(CompoMe::Interface &p_i,
+                                 CompoMe::String p_key) {}
 
-void Http_server_in::set_addr(const CompoMe::String p_addr) {
-  this->addr = p_addr;
-}
-i32 Http_server_in::get_port() const { return this->port; }
+// one disconnect
+void Http_server_in::one_disconnect(CompoMe::Require_helper &p_r,
+                                    CompoMe::String p_key) {}
 
-void Http_server_in::set_port(const i32 p_port) { this->port = p_port; }
-ui32 Http_server_in::get_max_client() const { return this->max_client; }
-
-void Http_server_in::set_max_client(const ui32 p_max_client) {
-  this->max_client = p_max_client;
-}
-ui32 Http_server_in::get_max_request_size() const {
-  return this->max_request_size;
-}
-
-void Http_server_in::set_max_request_size(const ui32 p_max_request_size) {
-  this->max_request_size = p_max_request_size;
-}
+void Http_server_in::one_disconnect(CompoMe::Interface &p_i,
+                                    CompoMe::String p_key) {}
 
 } // namespace Posix
 
