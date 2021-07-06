@@ -9,10 +9,8 @@
 #include <string.h>
 #include <string>
 #include <unistd.h>
-namespace cstd {
 #include <arpa/inet.h>
 #include <sys/socket.h>
-} // namespace cstd
 
 namespace CompoMe {
 
@@ -31,18 +29,18 @@ void Http_client_out::step() { Link::step(); }
 
 void Http_client_out::main_connect() {
   Link::main_connect();
-  cstd::sockaddr_in addr = {0};
+  sockaddr_in addr = {0};
   addr.sin_family = AF_INET;
-  addr.sin_port = cstd::htons(this->get_port());
-  addr.sin_addr.s_addr = cstd::inet_addr(this->get_addr().str.c_str());
+  addr.sin_port = htons(this->get_port());
+  addr.sin_addr.s_addr = inet_addr(this->get_addr().str.c_str());
 
-  this->sock = cstd::socket(AF_INET, cstd::SOCK_STREAM, cstd::IPPROTO_TCP);
+  this->sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
   if (sock == -1) {
     C_ERROR_TAG("http,client", "Socket creation error: ", strerror(errno));
     return;
   }
 
-  auto r = cstd::connect(this->sock, (cstd::sockaddr *)&addr, sizeof(addr));
+  auto r = connect(this->sock, (sockaddr *)&addr, sizeof(addr));
   if (r == -1) {
     C_ERROR_TAG("http,client", "Connection error: ", strerror(errno));
     this->main_disconnect();
@@ -84,7 +82,7 @@ void Http_client_out::one_connect(CompoMe::Require_helper &p_r,
 
     std::string req_s = request.ToString();
 
-    auto r = cstd::send(this->sock, req_s.c_str(), req_s.size(), 0);
+    auto r = send(this->sock, req_s.c_str(), req_s.size(), 0);
     if (r == -1) {
       C_ERROR_TAG("http,client,send", "Send Error : ", strerror(errno));
       this->main_disconnect();
