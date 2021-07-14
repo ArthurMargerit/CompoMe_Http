@@ -2,15 +2,15 @@
 #include "CompoMe/Log.hpp"
 #include "Interfaces/Interface.hpp"
 #include "Links/atomizes.hpp"
+#include <arpa/inet.h>
 #include <errno.h>
 #include <iostream>
 #include <sstream>
 #include <stdlib.h>
 #include <string.h>
 #include <string>
-#include <unistd.h>
-#include <arpa/inet.h>
 #include <sys/socket.h>
+#include <unistd.h>
 
 namespace CompoMe {
 
@@ -23,7 +23,7 @@ Http_client_out::Http_client_out()
   this->many.set_link(*this);
 }
 
-Http_client_out::~Http_client_out() {}
+Http_client_out::~Http_client_out() { this->main_disconnect(); }
 
 void Http_client_out::step() { Link::step(); }
 
@@ -63,11 +63,11 @@ void Http_client_out::main_disconnect() {
 void Http_client_out::one_connect(CompoMe::Require_helper &p_r,
                                   CompoMe::String p_key) {
 
-  auto& nc = this->fake_many[p_key];
+  auto &nc = this->fake_many[p_key];
 
   nc.fss.set_func_send([this, p_key](CompoMe::String_d &d) {
     std::stringstream path;
-    path << "/";//p_key.str;
+    path << "/"; // p_key.str;
 
     std::stringstream host;
     host << this->get_addr().str << ":" << this->get_port();
@@ -121,7 +121,8 @@ void Http_client_out::one_connect(CompoMe::Require_helper &p_r,
   });
   nc.f = p_r.fake_stream_it(nc.fss, nc.rss);
 
-  std::cout << p_key << "is now connected" << "\n";
+  std::cout << p_key << "is now connected"
+            << "\n";
 }
 
 void Http_client_out::one_connect(CompoMe::Interface &p_i,

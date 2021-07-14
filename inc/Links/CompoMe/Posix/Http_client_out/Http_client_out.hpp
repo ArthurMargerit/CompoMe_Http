@@ -36,12 +36,12 @@ public:
   void main_disconnect() override;
 
   // one connect
-  void one_connect(CompoMe::Require_helper &, CompoMe::String c);
-  void one_connect(CompoMe::Interface &, CompoMe::String);
+  void one_connect(CompoMe::Require_helper &, CompoMe::String c) override;
+  void one_connect(CompoMe::Interface &, CompoMe::String) override;
 
   // one disconnect
-  void one_disconnect(CompoMe::Require_helper &, CompoMe::String);
-  void one_disconnect(CompoMe::Interface &, CompoMe::String);
+  void one_disconnect(CompoMe::Require_helper &, CompoMe::String) override;
+  void one_disconnect(CompoMe::Interface &, CompoMe::String) override;
 
   // Get and set /////////////////////////////////////////////////////////////
 
