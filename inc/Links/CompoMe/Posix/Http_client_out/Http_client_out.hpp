@@ -4,6 +4,8 @@
 
 #include "Links/Link.hpp"
 
+#include "Links/CompoMe/Posix/Fake_pack.hpp"
+
 // TYPES
 
 #include "Types/CompoMe/String.hpp"
