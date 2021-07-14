@@ -17,24 +17,14 @@
 
 #include "Ports/CompoMe/Stream/map_out.hpp"
 
-#include "Interfaces/Fake_stream.hpp"
-#include "Interfaces/Function_stream_send_func.hpp"
-#include "Interfaces/Return_stream_recv_func.hpp"
+
 #include <iostream>
 
 namespace CompoMe {
 
 namespace Posix {
-struct Fake_pack {
-  Fake_pack() : f(nullptr), fss(), rss() {
-    std::cout << "fake build"
-         << "\n";
-  }
 
-  CompoMe::Fake_stream *f;
-  CompoMe::Function_stream_send_func fss;
-  CompoMe::Return_stream_recv_func rss;
-};
+struct Fake_pack {
 
 class Http_client_out : public CompoMe::Link {
 public:
@@ -76,7 +66,7 @@ public:
 
 private:
   int sock;
-  std::map<CompoMe::String, struct Fake_pack> fake_many;
+  std::map<CompoMe::String, struct CompoMe::Posix::Fake_pack> fake_many;
 
   // DATA ////////////////////////////////////////////////////////////////////
   CompoMe::String addr;
