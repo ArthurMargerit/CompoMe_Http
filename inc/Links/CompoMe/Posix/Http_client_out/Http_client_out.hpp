@@ -17,14 +17,11 @@
 
 #include "Ports/CompoMe/Stream/map_out.hpp"
 
-
 #include <iostream>
 
 namespace CompoMe {
 
 namespace Posix {
-
-struct Fake_pack {
 
 class Http_client_out : public CompoMe::Link {
 public:
