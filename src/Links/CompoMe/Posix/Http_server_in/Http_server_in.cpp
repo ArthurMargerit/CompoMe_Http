@@ -47,10 +47,11 @@ void Http_server_in::step() {
     if (this->i_fds == this->get_max_client()) {
       auto socket_err = accept(this->fds[0].fd, nullptr, nullptr);
       write(socket_err, "!!!MAX!!! CONNECTION", 20);
+      C_ERROR("!!!MAX!!! CONNECTION");
       close(socket_err);
     } else {
       fds[this->i_fds].fd = accept(this->fds[0].fd, nullptr, nullptr);
-      fds[this->i_fds].events = POLLIN | POLLHUP | POLLERR;
+      fds[this->i_fds].events = POLLIN | POLLHUP | POLLERR | POLLRDHUP;
       fds[this->i_fds].revents = 0;
 
       fds[0].revents = fds[0].revents - POLLIN; // remove it
@@ -70,8 +71,9 @@ void Http_server_in::step() {
       continue;
     }
 
-    if (fds[i].revents & POLLHUP) {
+    if (fds[i].revents & POLLHUP || fds[i].revents & POLLRDHUP) {
       // close socket
+      C_INFO("socket closed()");
       close(this->fds[i].fd);
       this->fds[i].events = 0;
       this->fds[i].revents = 0;
@@ -86,12 +88,20 @@ void Http_server_in::step() {
       continue;
     }
 
+    // Something to read
     if (this->fds[i].revents & POLLIN) {
+      this->fds[i].revents -= POLLIN;
+
       ssize_t readden =
           recv(this->fds[i].fd, this->buff, this->get_max_request_size(), 0);
-      if (readden == 0 || readden == 1) {
+
+      if (readden == 0 || readden == -1) {
+        C_ERROR("Wrong READ", i, readden, this->fds[i].revents);
+        this->fds[i].revents += POLLHUP;
+        i--;
         continue;
       }
+
       buff[readden] = '\0';
 
       auto result = CompoMe::Tools::Http::call(

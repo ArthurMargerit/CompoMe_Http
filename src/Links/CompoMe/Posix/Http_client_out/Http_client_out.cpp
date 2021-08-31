@@ -53,9 +53,6 @@ void Http_client_out::main_disconnect() {
   if (this->sock != -1) {
     close(this->sock);
     this->sock = -1;
-
-    // delete this->f.f;
-    // this->f.f = nullptr;
   }
 }
 
@@ -86,7 +83,7 @@ void Http_client_out::one_connect(CompoMe::Require_helper &p_r,
     if (r == -1) {
       C_ERROR_TAG("http,client,send", "Send Error : ", strerror(errno));
       this->main_disconnect();
-      throw "connection Error";
+      // throw "connection Error";
     }
     return true;
   });
@@ -94,6 +91,8 @@ void Http_client_out::one_connect(CompoMe::Require_helper &p_r,
   nc.rss.set_func_recv([this](CompoMe::String_d &d) {
     char l_buffer[1024 + 2];
     auto e = read(this->sock, l_buffer, 1024);
+    std::cout << "state:" << e << "buff:" << l_buffer << "\n";
+
     if (e == -1) {
       C_ERROR_TAG("http,client", "Receive error");
       this->main_disconnect();
@@ -106,8 +105,7 @@ void Http_client_out::one_connect(CompoMe::Require_helper &p_r,
       return false;
     }
 
-    l_buffer[e] = ' ';
-    l_buffer[e + 1] = '\0';
+    l_buffer[e] = '\0';
 
     atomizes::HTTPMessageParser parser;
     atomizes::HTTPMessage reponse;
@@ -121,8 +119,7 @@ void Http_client_out::one_connect(CompoMe::Require_helper &p_r,
   });
   nc.f = p_r.fake_stream_it(nc.fss, nc.rss);
 
-  std::cout << p_key << "is now connected"
-            << "\n";
+  C_INFO("http client is now connected");
 }
 
 void Http_client_out::one_connect(CompoMe::Interface &p_i,

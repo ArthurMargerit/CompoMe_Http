@@ -13,7 +13,7 @@ atomizes::HTTPMessage get_rep(int Status_code, std::string mess) {
       .SetHeader("Content-Type", "text/plain")
       .SetHeader("Access-Control-Allow-Origin", "*")
       .SetHeader("Connection", "keep-alive")
-      .SetMessageBody(mess);
+      .SetMessageBody((mess.length() == 0) ? " " : mess);
   return response;
 }
 
@@ -67,7 +67,7 @@ call(std::map<std::string, Caller_stream *> &c, char *cmd) {
   if (request.GetPath() == "/" && request.GetMessageBody()[0] == '?') {
     std::stringstream ss;
     for (auto &kv : c) {
-      ss << "//Interface "<< kv.first << ">\n";
+      ss << "//Interface " << kv.first << ">\n";
       kv.second->introspection(ss);
     }
     return {true, get_rep(200, ss.str()).ToString()};
@@ -97,6 +97,11 @@ call(CompoMe::Interface &def,
   if (request.GetMethod() != atomizes::MessageMethod::POST) {
     return {false,
             get_rep(400, "This request is not a POST method").ToString()};
+  }
+
+  if (request.GetMessageBody().size() == 0) {
+    return {false,
+            get_rep(400, "This request is empty").ToString()};
   }
 
   if (request.GetPath() == "/" && request.GetMessageBody()[0] == '?') {
