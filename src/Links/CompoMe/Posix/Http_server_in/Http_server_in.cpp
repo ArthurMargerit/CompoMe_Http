@@ -146,7 +146,7 @@ void Http_server_in::main_connect() {
   }
 
   {
-    auto r = listen(this->listening_socket, 0);
+    auto r = listen(this->listening_socket, 128);
     if (-1 == r) {
       C_ERROR("Listen failed : ", strerror(errno));
       return;
